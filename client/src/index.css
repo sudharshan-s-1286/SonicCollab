@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode Variables */
+    --bg-primary: #F7F5F0;
+    --bg-secondary: #FFFFFF;
+    --text-primary: #111318;
+    --text-secondary: #8A8FA8;
+    --accent-violet: #7C5CFC;
+    --accent-amber: #F5A623;
+    --border-color: rgba(17, 19, 24, 0.1);
+    
+    /* Stem Colors */
+    --stem-vocals: #7C5CFC;
+    --stem-drums: #F5A623;
+    --stem-bass: #14B8A6;
+    --stem-guitar: #F43F5E;
+    --stem-keys: #8B5CF6;
+    --stem-synth: #D946EF;
+    --stem-other: #64748B;
+  }
+
+  /* Dark Mode Variables applied to HTML element with .dark class */
+  .dark {
+    --bg-primary: #111318;
+    --bg-secondary: #1C1F2A;
+    --text-primary: #F7F5F0;
+    --text-secondary: #8A8FA8;
+    --accent-violet: #7C5CFC;
+    --accent-amber: #F5A623;
+    --border-color: rgba(247, 245, 240, 0.1);
+  }
+
+  body {
+    @apply bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors duration-200 antialiased font-inter;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-space;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply backdrop-blur-md bg-white/10 border border-white/20 dark:bg-black/20 dark:border-white/10;
+  }
+}
+
+/* Custom range slider styling */
+input[type=range] {
+  -webkit-appearance: none; 
+  @apply bg-transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  @apply h-3.5 w-3.5 rounded-full bg-[var(--accent-violet)] cursor-pointer mt-[-4px] shadow-sm;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  @apply w-full h-[6px] cursor-pointer bg-gray-300 dark:bg-gray-700 rounded-full;
+}
+
+/* Hide scrollbar for trending strips */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
