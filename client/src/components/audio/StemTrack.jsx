@@ -57,7 +57,8 @@ const StemTrack = ({ track, onRefresh }) => {
         {/* Simplified Waveform Visualization Placeholder */}
         <div className="h-10 w-full flex items-end gap-[2px] transition-all group-hover:gap-1">
            {[...Array(40)].map((_, i) => {
-             const h = 5 + Math.random() * 20;
+            // Deterministic pseudo-waveform so rendering stays pure.
+            const h = 5 + ((Math.sin(i * 12.9898) + 1) / 2) * 20;
              return (
                <div 
                  key={i} 

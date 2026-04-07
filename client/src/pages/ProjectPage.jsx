@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import usePlayerStore from '../store/playerStore';
 import useAudioEngine from '../hooks/useAudioEngine';
@@ -8,18 +8,21 @@ import ProjectHeader from '../components/project/ProjectHeader';
 import CommentThread from '../components/comment/CommentThread';
 import UploadStemForm from '../components/forms/UploadStemForm';
 import { Plus, Download, Share2, History, MessageCircle } from 'lucide-react';
-import io from 'socket.io-client';
+import VersionSelector from '../components/project/VersionSelector';
+import VersionHistoryPage from './VersionHistoryPage';
+import InviteCollaboratorForm from '../components/forms/InviteCollaboratorForm';
 
 const ProjectPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [activeTab, setActiveTab] = useState('stems'); // stems | comments | history
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [selectedVersionNumber, setSelectedVersionNumber] = useState(null);
 
   const { setActiveProjectId, setTracks } = usePlayerStore();
-  const { loadTrack } = useAudioEngine();
+  const { loadTrack, pauseAll } = useAudioEngine();
 
   const fetchProject = useCallback(async () => {
     try {
@@ -30,46 +33,41 @@ const ProjectPage = () => {
         
         // Update player store context
         setActiveProjectId(id);
-        
-        // Load tracks for the current version
-        const currentVersionData = projectData.versions.find(v => v.versionNumber === projectData.currentVersion);
-        if (currentVersionData) {
-          const tracks = currentVersionData.tracks;
-          setTracks(tracks);
-          // Pre-load audio buffers
-          tracks.forEach(t => loadTrack(t));
-        }
       }
     } catch (error) {
       console.error('Error fetching project:', error);
     } finally {
       setLoading(false);
     }
-  }, [id, setActiveProjectId, setTracks, loadTrack]);
+  }, [id, setActiveProjectId]);
 
   useEffect(() => {
     fetchProject();
-
-    // Socket.io for real-time updates
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
-    socket.emit('join:project', id);
-
-    socket.on('track:uploaded', (newTrack) => {
-      fetchProject();
-    });
-
-    socket.on('track:deleted', (trackId) => {
-      fetchProject();
-    });
-
-    socket.on('comment:new', (comment) => {
-      // Logic handled in CommentThread component or here
-    });
-
-    return () => {
-      socket.disconnect();
-    };
   }, [id, fetchProject]);
+
+  useEffect(() => {
+    if (!project) return;
+    const versions = project.versions || [];
+    const exists = selectedVersionNumber !== null && versions.some((v) => v.versionNumber === selectedVersionNumber);
+    if (selectedVersionNumber === null || !exists) {
+      setSelectedVersionNumber(project.currentVersion);
+    }
+  }, [project, selectedVersionNumber]);
+
+  useEffect(() => {
+    if (!project) return;
+    const versions = project.versions || [];
+    const version =
+      versions.find((v) => v.versionNumber === selectedVersionNumber) ||
+      versions.find((v) => v.versionNumber === project.currentVersion);
+
+    if (!version) return;
+
+    pauseAll();
+    const tracks = version.tracks || [];
+    setTracks(tracks);
+    tracks.forEach((t) => loadTrack(t));
+  }, [project, selectedVersionNumber, setTracks, loadTrack, pauseAll]);
 
   if (loading) return <div className="p-20 text-center text-[var(--accent-violet)] font-bold animate-pulse">Loading Workspace...</div>;
   if (!project) return <div className="p-20 text-center">Project not found.</div>;
@@ -77,7 +75,7 @@ const ProjectPage = () => {
   return (
     <div className="min-h-full flex flex-col pb-24">
       {/* Project Header Area */}
-      <ProjectHeader project={project} onRefresh={fetchProject} />
+      <ProjectHeader project={project} onRefresh={fetchProject} onInviteClick={() => setShowInviteModal(true)} />
 
       <div className="flex-1 container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
         
@@ -88,9 +86,6 @@ const ProjectPage = () => {
                <h2 className="text-xl font-space font-bold border-l-4 border-[var(--accent-violet)] pl-3 leading-none">
                  Multi-track Mixer
                </h2>
-               <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-secondary)] px-2 py-0.5 rounded-full bg-white/5">
-                 Version {project.currentVersion}
-               </span>
             </div>
 
             <button 
@@ -101,8 +96,16 @@ const ProjectPage = () => {
             </button>
           </div>
 
+          <div className="mt-4">
+            <VersionSelector
+              versions={project.versions || []}
+              selectedVersionNumber={selectedVersionNumber ?? project.currentVersion}
+              onSelect={(vNum) => setSelectedVersionNumber(vNum)}
+            />
+          </div>
+
           <div className="space-y-3">
-             {project.versions.find(v => v.versionNumber === project.currentVersion)?.tracks.length === 0 ? (
+             {(project.versions.find(v => v.versionNumber === selectedVersionNumber) || project.versions.find(v => v.versionNumber === project.currentVersion))?.tracks?.length === 0 ? (
                <div className="py-20 flex flex-col items-center justify-center glass-panel rounded-3xl border-dashed border-2 border-white/5">
                  <p className="text-[var(--text-secondary)] mb-4">No tracks uploaded to this version yet.</p>
                  <button 
@@ -113,7 +116,7 @@ const ProjectPage = () => {
                  </button>
                </div>
              ) : (
-               project.versions.find(v => v.versionNumber === project.currentVersion)?.tracks.map((track) => (
+               (project.versions.find(v => v.versionNumber === selectedVersionNumber) || project.versions.find(v => v.versionNumber === project.currentVersion))?.tracks.map((track) => (
                  <StemTrack key={track._id} track={track} onRefresh={fetchProject} />
                ))
              )}
@@ -130,13 +133,36 @@ const ProjectPage = () => {
 
            <div className="min-h-[500px]">
               {activeTab === 'comments' && <CommentThread projectId={id} />}
+              {activeTab === 'history' && <VersionHistoryPage projectId={id} onVersionCreated={fetchProject} />}
               {activeTab === 'stems' && (
                 <div className="glass-panel p-6 rounded-2xl space-y-6">
                    <div>
                      <h3 className="text-sm font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">Actions</h3>
                      <div className="space-y-2">
-                        <ActionButton icon={<Download size={16}/>} label="Download current stems"/>
-                        <ActionButton icon={<Share2 size={16}/>} label="Invite collaborator"/>
+                        <ActionButton
+                          icon={<Download size={16} />}
+                          label="Download current stems"
+                          onClick={async () => {
+                            try {
+                              const res = await api.get(`/projects/${id}/download/zip`, { responseType: 'blob' });
+                              const url = URL.createObjectURL(new Blob([res.data]));
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `${project.title.replace(/ /g, '_')}_v${project.currentVersion}.zip`;
+                              document.body.appendChild(a);
+                              a.click();
+                              a.remove();
+                              URL.revokeObjectURL(url);
+                            } catch (err) {
+                              console.error('Download failed:', err);
+                            }
+                          }}
+                        />
+                        <ActionButton
+                          icon={<Share2 size={16} />}
+                          label="Invite collaborator"
+                          onClick={() => setShowInviteModal(true)}
+                        />
                      </div>
                    </div>
                 </div>
@@ -155,6 +181,16 @@ const ProjectPage = () => {
           }}
         />
       )}
+
+      {showInviteModal && (
+        <InviteCollaboratorForm
+          projectId={id}
+          onClose={() => setShowInviteModal(false)}
+          onInvited={() => {
+            // Link copy is handled inside the modal.
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -169,8 +205,11 @@ const TabButton = ({ active, onClick, icon, label }) => (
   </button>
 );
 
-const ActionButton = ({ icon, label }) => (
-  <button className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-medium transition-all group">
+const ActionButton = ({ icon, label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-medium transition-all group"
+  >
     <div className="text-[var(--text-secondary)] group-hover:text-[var(--accent-violet)] transition-colors">{icon}</div>
     <span>{label}</span>
   </button>

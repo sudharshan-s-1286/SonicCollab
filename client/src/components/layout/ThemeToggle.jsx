@@ -2,18 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
 const ThemeToggle = () => {
-  const [theme, setTheme] = useState('dark'); // Default to dark as per specs
-
-  useEffect(() => {
-    // Check localStorage
-    const savedTheme = localStorage.getItem('stemspace-theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-      applyThemeClass(savedTheme);
-    } else {
-      applyThemeClass('dark'); // Default init
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('soniccollab-theme') || 'dark';
+    } catch {
+      return 'dark';
     }
-  }, []);
+  });
 
   const applyThemeClass = (currentTheme) => {
     const htmlElement = document.documentElement;
@@ -23,11 +18,14 @@ const ThemeToggle = () => {
       htmlElement.classList.remove('dark');
     }
   };
+  useEffect(() => {
+    applyThemeClass(theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    localStorage.setItem('stemspace-theme', newTheme);
+    localStorage.setItem('soniccollab-theme', newTheme);
     applyThemeClass(newTheme);
   };
 

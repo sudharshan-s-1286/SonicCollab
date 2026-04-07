@@ -1,21 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heart, Bookmark, Share2, Music, UserCircle, Globe, Lock } from 'lucide-react';
 import api from '../../services/api';
+import useAuthStore from '../../store/authStore';
 
-const ProjectHeader = ({ project, onRefresh }) => {
+const ProjectHeader = ({ project, onRefresh, onInviteClick }) => {
+  const { user, checkAuth } = useAuthStore();
   const [isLiking, setIsLiking] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (!project) return;
+    if (!user) {
+      setIsLiked(false);
+      setIsBookmarked(false);
+      return;
+    }
+
+    const liked =
+      user.likedProjects?.some((p) => p.toString() === project._id.toString()) ||
+      project.likes?.some((id) => id.toString() === project._id.toString());
+
+    const bookmarked = user.bookmarks?.some((p) => p.toString() === project._id.toString());
+
+    setIsLiked(!!liked);
+    setIsBookmarked(!!bookmarked);
+  }, [project, user]);
 
   const toggleLike = async () => {
     setIsLiking(true);
     try {
       const res = await api.post(`/projects/${project._id}/like`);
       if (res.data.success) {
+        setIsLiked(!!res.data.isLiked);
         onRefresh();
       }
     } catch (error) {
       console.error('Error toggling like:', error);
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const toggleBookmark = async () => {
+    try {
+      const res = await api.post(`/projects/${project._id}/bookmark`);
+      if (res.data.success) {
+        setIsBookmarked(!!res.data.isBookmarked);
+        onRefresh();
+        // Keep auth store in sync with bookmark toggle.
+        if (checkAuth) await checkAuth();
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
     }
   };
 
@@ -71,17 +108,31 @@ const ProjectHeader = ({ project, onRefresh }) => {
            <button 
              onClick={toggleLike}
              disabled={isLiking}
-             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all border ${project.likes?.includes(project.owner?._id) ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20' : 'bg-white/5 border-white/5 text-[var(--text-secondary)] hover:bg-white/10'}`}
+             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all border ${
+               isLiked
+                 ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20'
+                 : 'bg-white/5 border-white/5 text-[var(--text-secondary)] hover:bg-white/10'
+             }`}
            >
-              <Heart size={18} fill={project.likes?.length > 0 ? 'currentColor' : 'none'} />
+              <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
               <span>{project.likes?.length || 0}</span>
            </button>
 
-           <button className="p-3 bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] rounded-xl border border-white/5 transition-all">
-              <Bookmark size={18} />
+           <button
+             onClick={toggleBookmark}
+             className={`p-3 rounded-xl border transition-all ${
+               isBookmarked
+                 ? 'bg-[var(--accent-violet)]/15 border-[var(--accent-violet)]/30 text-[var(--accent-violet)]'
+                 : 'bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] border-white/5'
+             }`}
+           >
+              <Bookmark size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
            </button>
 
-           <button className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent-violet)] hover:bg-opacity-90 text-white rounded-xl font-bold transition-transform transform hover:-translate-y-1 shadow-lg shadow-[var(--accent-violet)]/20 ml-2">
+           <button
+             onClick={onInviteClick}
+             className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent-violet)] hover:bg-opacity-90 text-white rounded-xl font-bold transition-transform transform hover:-translate-y-1 shadow-lg shadow-[var(--accent-violet)]/20 ml-2"
+           >
               <Share2 size={18} />
               <span>Invite</span>
            </button>

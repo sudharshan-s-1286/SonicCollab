@@ -1,6 +1,7 @@
 import Project from '../models/Project.js';
 import User from '../models/User.js';
 import { buildZip } from '../utils/zipBuilder.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Create a new project
 // @route   POST /api/projects
@@ -148,6 +149,17 @@ export const toggleLikeProject = async (req, res) => {
     if (likeIndex === -1) {
       project.likes.push(req.user._id);
       user.likedProjects.push(project._id);
+
+      // Create notification for the project owner (no sockets for now).
+      if (project.owner.toString() !== req.user._id.toString()) {
+        await Notification.create({
+          recipient: project.owner,
+          sender: req.user._id,
+          type: 'like',
+          project: project._id,
+          message: `${user.username} liked your project: "${project.title}"`,
+        });
+      }
     } else {
       project.likes.splice(likeIndex, 1);
       user.likedProjects = user.likedProjects.filter(p => p.toString() !== project._id.toString());
@@ -158,6 +170,37 @@ export const toggleLikeProject = async (req, res) => {
     res.json({ success: true, likesCount: project.likes.length, isLiked: likeIndex === -1 });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Toggle bookmark for a project
+// @route   POST /api/projects/:id/bookmark
+// @access  Private
+export const toggleBookmarkProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const project = await Project.findById(projectId);
+    if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const isBookmarked = user.bookmarks.some((p) => p.toString() === projectId);
+    if (isBookmarked) {
+      user.bookmarks = user.bookmarks.filter((p) => p.toString() !== projectId);
+    } else {
+      user.bookmarks.push(projectId);
+    }
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      isBookmarked: !isBookmarked,
+      bookmarksCount: user.bookmarks.length,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

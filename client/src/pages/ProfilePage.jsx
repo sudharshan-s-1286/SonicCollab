@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import ProjectCard from '../components/project/ProjectCard';
-import { User, MapPin, link as LinkIcon, Twitter, Github, Music, Users, ShieldCheck } from 'lucide-react';
+import { Music, Users, ShieldCheck, Globe } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 
 const ProfilePage = () => {
@@ -110,8 +110,8 @@ const ProfilePage = () => {
                  </div>
 
                  <div className="pt-4 border-t border-white/5 space-y-4">
-                    <SocialLink icon={<Twitter size={16}/>} label="Twitter" />
-                    <SocialLink icon={<Github size={16}/>} label="GitHub" />
+                    <SocialLink icon={<Globe size={16} />} label="Website" />
+                    <SocialLink icon={<Users size={16} />} label="Community" />
                  </div>
               </div>
            </div>

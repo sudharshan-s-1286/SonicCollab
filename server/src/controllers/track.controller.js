@@ -35,7 +35,7 @@ export const uploadTrack = async (req, res) => {
     // Use resource_type: "video" for audio uploads on Cloudinary
     const options = {
       resource_type: 'video',
-      folder: `stemspace/projects/${projectId}/v${project.currentVersion}`
+      folder: `soniccollab/projects/${projectId}/v${project.currentVersion}`
     };
 
     const uploadResult = await streamUpload(file.buffer, options);
@@ -57,9 +57,6 @@ export const uploadTrack = async (req, res) => {
       project.versions[versionIndex].tracks.push(newTrack._id);
       await project.save();
     }
-
-    // Emit Socket.io event that a track was uploaded
-    req.io.to(projectId).emit('track:uploaded', newTrack);
 
     res.status(201).json({ success: true, data: newTrack });
   } catch (error) {
@@ -102,9 +99,6 @@ export const deleteTrack = async (req, res) => {
 
     await Track.deleteOne({ _id: track._id });
 
-    // Emit event
-    req.io.to(project._id.toString()).emit('track:deleted', track._id);
-
     res.json({ success: true, message: 'Track deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -130,8 +124,6 @@ export const updateTrack = async (req, res) => {
         track.stemType = req.body.stemType || track.stemType;
         
         const updatedTrack = await track.save();
-
-        req.io.to(project._id.toString()).emit('track:updated', updatedTrack);
 
         res.json({ success: true, data: updatedTrack });
     } catch (error) {

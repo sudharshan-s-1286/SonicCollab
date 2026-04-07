@@ -101,3 +101,41 @@ export const toggleFollow = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// @desc    Get projects the user liked
+// @route   GET /api/users/me/liked-projects
+// @access  Private
+export const getLikedProjects = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const projects = await Project.find({ _id: { $in: user.likedProjects } })
+      .populate('owner', 'username profilePicUrl')
+      .populate('collaborators.user', 'username profilePicUrl')
+      .sort({ updatedAt: -1 });
+
+    res.json({ success: true, data: projects });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get projects the user bookmarked
+// @route   GET /api/users/me/bookmarked-projects
+// @access  Private
+export const getBookmarkedProjects = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const projects = await Project.find({ _id: { $in: user.bookmarks } })
+      .populate('owner', 'username profilePicUrl')
+      .populate('collaborators.user', 'username profilePicUrl')
+      .sort({ updatedAt: -1 });
+
+    res.json({ success: true, data: projects });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import ProjectCard from '../components/project/ProjectCard';
 import { Search, Filter, Music, Users, ArrowRight } from 'lucide-react';
@@ -13,7 +13,7 @@ const ExplorePage = () => {
 
   const genres = ['All', 'Rock', 'Pop', 'Hip-Hop', 'Electronic', 'Jazz', 'Classical', 'Acoustic'];
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/search?q=${debouncedSearch}&genre=${activeGenre}`);
@@ -25,11 +25,11 @@ const ExplorePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, activeGenre]);
 
   useEffect(() => {
     fetchResults();
-  }, [debouncedSearch, activeGenre]);
+  }, [fetchResults]);
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-12 pb-24">

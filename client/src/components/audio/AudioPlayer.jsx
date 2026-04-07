@@ -14,7 +14,6 @@ const AudioPlayer = () => {
     masterVolume,
     setMasterVolume,
     activeProjectId,
-    tracks
   } = usePlayerStore();
 
   const { playAll, pauseAll, seekTo } = useAudioEngine();

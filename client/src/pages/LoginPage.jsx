@@ -12,7 +12,7 @@ const LoginPage = () => {
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accentViolet to-accentAmber flex items-center justify-center shadow-lg">
           <Music className="text-white" size={24} />
         </div>
-        <h1 className="text-3xl font-space font-bold text-transparent bg-clip-text bg-gradient-to-r from-accentViolet to-white">StemSpace</h1>
+        <h1 className="text-3xl font-space font-bold text-transparent bg-clip-text bg-gradient-to-r from-accentViolet to-white">SonicCollab</h1>
       </div>
       
       <LoginForm />

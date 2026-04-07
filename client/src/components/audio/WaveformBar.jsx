@@ -5,7 +5,7 @@ import useAudioEngine from '../../hooks/useAudioEngine';
 const WaveformBar = ({ width, height, isThumbnail }) => {
   const canvasRef = useRef(null);
   const { isPlaying } = usePlayerStore();
-  const { trackNodes } = useAudioEngine();
+  const { getTrackNodes } = useAudioEngine();
   const rafId = useRef(null);
 
   useEffect(() => {
@@ -15,6 +15,7 @@ const WaveformBar = ({ width, height, isThumbnail }) => {
     
     const draw = () => {
       // Find the first available analyser node
+      const trackNodes = getTrackNodes();
       const analysers = Object.values(trackNodes).map(n => n.analyser).filter(Boolean);
       if (analysers.length === 0) {
         // Draw static placeholder bars if nothing is playing
@@ -68,7 +69,7 @@ const WaveformBar = ({ width, height, isThumbnail }) => {
     return () => {
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
-  }, [isPlaying, trackNodes, isThumbnail]);
+  }, [isPlaying, getTrackNodes, isThumbnail]);
 
   return (
     <canvas 

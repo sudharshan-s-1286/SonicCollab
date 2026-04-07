@@ -2,7 +2,9 @@ import express from 'express';
 import {
   getUserProfile,
   updateProfile,
-  toggleFollow
+  toggleFollow,
+  getLikedProjects,
+  getBookmarkedProjects
 } from '../controllers/user.controller.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -17,5 +19,8 @@ router.route('/:id')
 router.route('/:id/follow')
   .post(protect, toggleFollow)
   .delete(protect, toggleFollow); // Both POST and DELETE to toggle
+
+router.route('/me/liked-projects').get(protect, getLikedProjects);
+router.route('/me/bookmarked-projects').get(protect, getBookmarkedProjects);
 
 export default router;

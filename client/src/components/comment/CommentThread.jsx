@@ -1,22 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, MessageSquare, Clock, User, Reply, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../../services/api';
-import useAuthStore from '../../store/authStore';
 import usePlayerStore from '../../store/playerStore';
 import useAudioEngine from '../../hooks/useAudioEngine';
 import formatTime from '../../utils/formatTime';
-import io from 'socket.io-client';
 
 const CommentThread = ({ projectId }) => {
   const [comments, setComments] = useState([]);
   const [text, setText] = useState('');
   const [useTimestamp, setUseTimestamp] = useState(false);
-  const { user } = useAuthStore();
   const { currentTime } = usePlayerStore();
   const { seekTo } = useAudioEngine();
   const scrollRef = useRef(null);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const res = await api.get(`/projects/${projectId}/comments`);
       if (res.data.success) {
@@ -25,19 +22,13 @@ const CommentThread = ({ projectId }) => {
     } catch (err) {
       console.error('Error fetching comments:', err);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    fetchComments();
-    
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
-    socket.emit('join:project', projectId);
-    socket.on('comment:new', () => {
-      fetchComments();
-    });
-
-    return () => socket.disconnect();
-  }, [projectId]);
+    (async () => {
+      await fetchComments();
+    })();
+  }, [fetchComments]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

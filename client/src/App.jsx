@@ -14,6 +14,10 @@ import DashboardPage from './pages/DashboardPage';
 import ProjectPage from './pages/ProjectPage';
 import ExplorePage from './pages/ExplorePage';
 import ProfilePage from './pages/ProfilePage';
+import NotificationsPage from './pages/NotificationsPage';
+import SavedPage from './pages/SavedPage';
+import InvitePage from './pages/InvitePage';
+import SettingsPage from './pages/SettingsPage';
 
 // Protective Route Wrapper
 const PrivateRoute = ({ children }) => {
@@ -24,7 +28,7 @@ const PrivateRoute = ({ children }) => {
 };
 
 function App() {
-  const { checkAuth, isLoading, user } = useAuthStore();
+  const { checkAuth, isLoading } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   useEffect(() => {
@@ -52,7 +56,14 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-              <Route path="/explore" element={<ExplorePage />} />
+              <Route
+                path="/explore"
+                element={
+                  <PrivateRoute>
+                    <ExplorePage />
+                  </PrivateRoute>
+                }
+              />
               <Route 
                 path="/dashboard" 
                 element={
@@ -76,6 +87,38 @@ function App() {
                     <ProfilePage />
                   </PrivateRoute>
                 } 
+              />
+              <Route
+                path="/saved"
+                element={
+                  <PrivateRoute>
+                    <SavedPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <PrivateRoute>
+                    <NotificationsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/invite/:token"
+                element={
+                  <PrivateRoute>
+                    <InvitePage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <PrivateRoute>
+                    <SettingsPage />
+                  </PrivateRoute>
+                }
               />
             </Routes>
           </main>

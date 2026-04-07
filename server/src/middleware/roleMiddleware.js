@@ -4,7 +4,9 @@ import Project from '../models/Project.js';
 export const checkProjectRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
-      const projectId = req.params.id || req.body.projectId;
+      // Routes in this codebase sometimes use `:id` and sometimes `:projectId`.
+      // Support both so role checks work for all project-scoped endpoints.
+      const projectId = req.params.projectId || req.params.id || req.body.projectId;
       if (!projectId) {
         return res.status(400).json({ success: false, message: 'Project ID is required' });
       }

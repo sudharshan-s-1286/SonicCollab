@@ -7,7 +7,6 @@ let audioCtx = null;
 const useAudioEngine = () => {
   const {
     isPlaying,
-    currentTime,
     duration,
     setIsPlaying,
     setCurrentTime,
@@ -83,7 +82,7 @@ const useAudioEngine = () => {
   const stopAll = useCallback(() => {
     Object.values(trackNodes.current).forEach(nodes => {
       if (nodes.source) {
-        try { source.stop(); } catch(e) {}
+        try { nodes.source.stop(); } catch { /* ignore */ }
         nodes.source.disconnect();
       }
     });
@@ -152,12 +151,14 @@ const useAudioEngine = () => {
     });
   }, [tracks, masterVolume, getContext]);
 
+  const getTrackNodes = useCallback(() => trackNodes.current, []);
+
   return {
     loadTrack,
     playAll,
     pauseAll,
     seekTo,
-    trackNodes: trackNodes.current
+    getTrackNodes,
   };
 };
 

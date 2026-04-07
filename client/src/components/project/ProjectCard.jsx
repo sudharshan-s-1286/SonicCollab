@@ -7,7 +7,6 @@ const ProjectCard = ({ project }) => {
     _id,
     title,
     genre,
-    owner,
     collaborators,
     likes,
     comments,

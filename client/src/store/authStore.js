@@ -1,6 +1,24 @@
 import { create } from 'zustand';
 import api from '../services/api';
 
+const debugLog = (payload) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7589/ingest/777e9d3e-cab0-4b34-b6ce-3f2388863c0f', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '0bff56' },
+    body: JSON.stringify({
+      sessionId: '0bff56',
+      runId: payload.runId || 'pre-fix',
+      hypothesisId: payload.hypothesisId,
+      location: payload.location,
+      message: payload.message,
+      data: payload.data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+};
+
 const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: false,
@@ -46,8 +64,14 @@ const useAuthStore = create((set) => ({
           return;
         }
       }
-    } catch (error) {
-      // console.log("Auth check error, user not logged in");
+    } catch {
+      debugLog({
+        hypothesisId: 'H5',
+        location: 'client/src/store/authStore.js:checkAuth',
+        message: 'checkAuth failed (likely 401/503)',
+        data: {},
+      });
+      // Not logged in / refresh failed.
     }
     // If anything fails
     set({ user: null, isAuthenticated: false, token: null, isLoading: false });
@@ -71,6 +95,12 @@ const useAuthStore = create((set) => ({
       }
     } catch (error) {
       set({ isLoading: false });
+      debugLog({
+        hypothesisId: 'H5',
+        location: 'client/src/store/authStore.js:login',
+        message: 'login failed',
+        data: { status: error.response?.status, message: String(error.response?.data?.message || '').slice(0, 120) },
+      });
       return { 
         success: false, 
         message: error.response?.data?.message || 'Login failed' 
@@ -95,6 +125,12 @@ const useAuthStore = create((set) => ({
       }
     } catch (error) {
       set({ isLoading: false });
+      debugLog({
+        hypothesisId: 'H5',
+        location: 'client/src/store/authStore.js:signup',
+        message: 'signup failed',
+        data: { status: error.response?.status, message: String(error.response?.data?.message || '').slice(0, 120) },
+      });
       return { 
         success: false, 
         message: error.response?.data?.message || 'Signup failed' 

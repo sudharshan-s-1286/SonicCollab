@@ -17,7 +17,8 @@ export const addComment = async (req, res) => {
       project: projectId,
       author: req.user._id,
       text,
-      timestampRef: timestampRef || null
+      // Preserve `0` as a valid timestamp.
+      timestampRef: timestampRef ?? null
     });
 
     // Notify project owner if not commenter
@@ -29,19 +30,6 @@ export const addComment = async (req, res) => {
         project: projectId,
         message: `${req.user.username} commented on your project: "${project.title}"`
       });
-      
-      // Emit socket notification if available
-      if (req.io) {
-        req.io.to(project.owner.toString()).emit('notification:new', {
-          type: 'comment',
-          message: `${req.user.username} commented on your project.`
-        });
-      }
-    }
-
-    // Emit comment to project room
-    if (req.io) {
-      req.io.to(projectId).emit('comment:new', comment);
     }
 
     res.status(201).json({ success: true, data: comment });

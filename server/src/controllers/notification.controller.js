@@ -5,12 +5,45 @@ import Notification from '../models/Notification.js';
 // @access  Private
 export const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.user._id })
-      .populate('sender', 'username profilePicUrl')
-      .populate('project', 'title')
-      .sort({ createdAt: -1 });
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit || '50', 10)));
+    const skip = (page - 1) * limit;
 
-    res.json({ success: true, data: notifications });
+    const [notifications, total] = await Promise.all([
+      Notification.find({ recipient: req.user._id })
+        .populate('sender', 'username profilePicUrl')
+        .populate('project', 'title')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Notification.countDocuments({ recipient: req.user._id }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        notifications,
+        page,
+        limit,
+        total,
+        hasNext: skip + notifications.length < total,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get unread notification count
+// @route   GET /api/notifications/unread-count
+// @access  Private
+export const getUnreadNotificationCount = async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({
+      recipient: req.user._id,
+      isRead: false,
+    });
+    res.json({ success: true, data: { count } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

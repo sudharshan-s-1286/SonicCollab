@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Compass, FolderHeart, Settings, CircleDashed } from 'lucide-react';
-import useAuthStore from '../../../store/authStore';
+import useAuthStore from '../../store/authStore';
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
   const { user } = useAuthStore();
